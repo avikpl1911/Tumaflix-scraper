@@ -31,12 +31,14 @@ const searchfind = (madetitle, type) => __awaiter(void 0, void 0, void 0, functi
     const parseurl = (yield axios_1.default.get(`https://tugaflix.best/${type == "movie" ? "filmes" : "series"}/?s=${madetitle}`, {
         headers: { "Accept-Encoding": "identity" },
     })).data;
+    console.log("hello");
     const parseurl$ = (0, cheerio_1.load)(parseurl);
     const posterLinks = parseurl$("div.poster").find("a");
     var linkscrape;
     posterLinks.each((index, element) => {
-        if (posterLinks.attr("title") == madetitle) {
-            linkscrape = posterLinks.attr("href");
+        if (parseurl$(element).attr("title") == madetitle) {
+            // console.log(parseurl$(element).attr("href"))
+            linkscrape = parseurl$(element).attr("href");
         }
     });
     if (linkscrape) {
@@ -122,11 +124,36 @@ const foundfind = (srcs) => {
 const app = (0, express_1.default)();
 app
     .use((0, cors_1.default)())
+    .get("/", (req, res) => { res.send("formovie /movie/tmdb forshow /tv/tmdb/season/episode"); })
     .get('/tv/:tmdb/:season/:episode', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    res.send(yield streamtape(foundfind(yield playerlost(parseInt(req.params.tmdb), "tv", parseInt(req.params.season), parseInt(req.params.episode)))));
+    const logreq = yield streamtape(foundfind(yield playerlost(parseInt(req.params.tmdb), "tv", parseInt(req.params.season), parseInt(req.params.episode))));
+    if (logreq) {
+        if ((logreq === null || logreq === void 0 ? void 0 : logreq.length) > 0) {
+            console.log("why");
+            res.send(logreq);
+        }
+        else {
+            res.status(404);
+        }
+    }
+    else {
+        res.status(404).send("not found");
+    }
 }))
     .get('/movie/:tmdb', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    res.send(yield streamtape(foundfind(yield playerlost(parseInt(req.params.tmdb), "movie", 1, 1))));
+    const logreq = yield streamtape(foundfind(yield playerlost(parseInt(req.params.tmdb), "movie", 1, 1)));
+    if (logreq) {
+        if ((logreq === null || logreq === void 0 ? void 0 : logreq.length) > 0) {
+            console.log("why");
+            res.send(logreq);
+        }
+        else {
+            res.status(404);
+        }
+    }
+    else {
+        res.status(404).send("not found");
+    }
 }))
     .listen(process.env.PORT || 7000);
 // const main_ = async ()=>{

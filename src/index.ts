@@ -105,7 +105,7 @@ const playerlost: (
 
 
     const uu = await response.text();
-   
+
     const url_parse$ = load(uu);
 
     if (type == "movie") {
