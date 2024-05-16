@@ -44,15 +44,18 @@ const searchfind: (madetitle: string, type: string) => Promise<string> = async (
     )
   ).data;
 
+  console.log("hello")
+
   const parseurl$ = load(parseurl);
 
   const posterLinks = parseurl$("div.poster").find("a");
 
-  var linkscrape;
+  var linkscrape : string | undefined;
 
   posterLinks.each((index, element) => {
-    if (posterLinks.attr("title") == madetitle) {
-      linkscrape = posterLinks.attr("href");
+    if (parseurl$(element).attr("title") == madetitle) {
+      // console.log(parseurl$(element).attr("href"))
+      linkscrape = parseurl$(element).attr("href");
     }
   });
 
@@ -79,6 +82,8 @@ const playerlost: (
   const linkscrape = await searchfind(madetitle, type);
  
   if (linkscrape !== "") {
+
+    
     const sea = s < 10 ? `0${s}` : s.toString();
     const eps = e < 10 ? `0${e}` : e.toString();
     const response = await fetch(linkscrape, {
@@ -97,8 +102,10 @@ const playerlost: (
           : new URLSearchParams({ [`S${sea}E${eps}`]: "" }), // body data type must match "Content-Type" header
     });
 
-    const uu = await response.text();
 
+
+    const uu = await response.text();
+   
     const url_parse$ = load(uu);
 
     if (type == "movie") {
@@ -172,10 +179,32 @@ app
 .use(cors())
 .get("/",(req,res)=>{res.send("formovie /movie/tmdb forshow /tv/tmdb/season/episode")})
 .get('/tv/:tmdb/:season/:episode',async (req,res)=>{
-  res.send(await streamtape(foundfind(await playerlost(parseInt(req.params.tmdb), "tv", parseInt(req.params.season) ,  parseInt(req.params.episode)))))
+  const logreq = await streamtape(foundfind(await playerlost(parseInt(req.params.tmdb), "tv", parseInt(req.params.season) ,  parseInt(req.params.episode))))
+  if(logreq){
+    if (logreq?.length > 0){
+      console.log("why")
+      res.send(logreq)
+    }else{
+      res.status(404)
+    }
+  }else{
+    res.status(404).send("not found")
+  }
 })
 .get('/movie/:tmdb',async (req,res)=>{
-  res.send(await streamtape(foundfind(await playerlost(parseInt(req.params.tmdb), "movie", 1 ,  1))))
+  const logreq = await streamtape(foundfind(await playerlost(parseInt(req.params.tmdb), "movie", 1 ,  1)))
+  if(logreq){
+    if (logreq?.length > 0){
+      console.log("why")
+      res.send(logreq)
+    }else{
+      res.status(404)
+    }
+  }else{
+    res.status(404).send("not found")
+  }
+  
+  
 })
 .listen(process.env.PORT || 7000)
 
