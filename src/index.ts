@@ -170,6 +170,7 @@ const app = express()
 
 app
 .use(cors())
+.get("/",(req,res)=>{res.send("formovie /movie/tmdb forshow /tv/tmdb/season/episode")})
 .get('/tv/:tmdb/:season/:episode',async (req,res)=>{
   res.send(await streamtape(foundfind(await playerlost(parseInt(req.params.tmdb), "tv", parseInt(req.params.season) ,  parseInt(req.params.episode)))))
 })
