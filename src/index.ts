@@ -3,6 +3,7 @@ import { load } from "cheerio";
 import urlParser from "urlparser";
 import express from "express"
 import cors from 'cors'
+import { normalizeUnicodeText } from 'normalize-unicode-text'
 
 type movie = {
   title: string;
@@ -21,11 +22,11 @@ const make_title: (titleid: number, type: string) => Promise<string> = async (
   if (type == "movie") {
     const response : movie= (await axios.get(`https://api.themoviedb.org/3/movie/${titleid}?api_key=e8f6efe815b9e7eb81c43cfb9c10984a`)).data
     
-    return `${response.title} (${response.release_date.split("-")[0]})`;
+    return normalizeUnicodeText(`${response.title} (${response.release_date.split("-")[0]})`);
   } else {
     const losttv : tv = (await axios.get(`https://api.themoviedb.org/3/tv/${titleid}?api_key=e8f6efe815b9e7eb81c43cfb9c10984a`)).data;
-
-    return losttv.name;
+    console.log(normalizeUnicodeText(losttv.name))
+    return normalizeUnicodeText(losttv.name);
   }
 };
 
