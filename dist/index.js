@@ -17,14 +17,16 @@ const cheerio_1 = require("cheerio");
 const urlparser_1 = __importDefault(require("urlparser"));
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
+const normalize_unicode_text_1 = require("normalize-unicode-text");
 const make_title = (titleid, type) => __awaiter(void 0, void 0, void 0, function* () {
     if (type == "movie") {
         const response = (yield axios_1.default.get(`https://api.themoviedb.org/3/movie/${titleid}?api_key=e8f6efe815b9e7eb81c43cfb9c10984a`)).data;
-        return `${response.title} (${response.release_date.split("-")[0]})`;
+        return (0, normalize_unicode_text_1.normalizeUnicodeText)(`${response.title} (${response.release_date.split("-")[0]})`);
     }
     else {
         const losttv = (yield axios_1.default.get(`https://api.themoviedb.org/3/tv/${titleid}?api_key=e8f6efe815b9e7eb81c43cfb9c10984a`)).data;
-        return losttv.name;
+        console.log((0, normalize_unicode_text_1.normalizeUnicodeText)(losttv.name));
+        return (0, normalize_unicode_text_1.normalizeUnicodeText)(losttv.name);
     }
 });
 const searchfind = (madetitle, type) => __awaiter(void 0, void 0, void 0, function* () {
