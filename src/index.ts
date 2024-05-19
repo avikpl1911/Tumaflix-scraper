@@ -1,9 +1,9 @@
 import axios from "axios";
 import { load } from "cheerio";
 import urlParser from "urlparser";
-import express from "express"
-import cors from 'cors'
-import { normalizeUnicodeText } from 'normalize-unicode-text'
+import express from "express";
+import cors from "cors";
+import { normalizeUnicodeText } from "normalize-unicode-text";
 
 type movie = {
   title: string;
@@ -11,21 +11,30 @@ type movie = {
 };
 
 type tv = {
-  name : string
-}
-
+  name: string;
+};
 
 const make_title: (titleid: number, type: string) => Promise<string> = async (
   titleid: number,
-  type : string
+  type: string
 ) => {
   if (type == "movie") {
-    const response : movie= (await axios.get(`https://api.themoviedb.org/3/movie/${titleid}?api_key=e8f6efe815b9e7eb81c43cfb9c10984a`)).data
-    
-    return normalizeUnicodeText(`${response.title} (${response.release_date.split("-")[0]})`);
+    const response: movie = (
+      await axios.get(
+        `https://api.themoviedb.org/3/movie/${titleid}?api_key=e8f6efe815b9e7eb81c43cfb9c10984a`
+      )
+    ).data;
+
+    return normalizeUnicodeText(
+      `${response.title} (${response.release_date.split("-")[0]})`
+    );
   } else {
-    const losttv : tv = (await axios.get(`https://api.themoviedb.org/3/tv/${titleid}?api_key=e8f6efe815b9e7eb81c43cfb9c10984a`)).data;
-    console.log(normalizeUnicodeText(losttv.name))
+    const losttv: tv = (
+      await axios.get(
+        `https://api.themoviedb.org/3/tv/${titleid}?api_key=e8f6efe815b9e7eb81c43cfb9c10984a`
+      )
+    ).data;
+    console.log(normalizeUnicodeText(losttv.name));
     return normalizeUnicodeText(losttv.name);
   }
 };
@@ -45,13 +54,13 @@ const searchfind: (madetitle: string, type: string) => Promise<string> = async (
     )
   ).data;
 
-  console.log("hello")
+  console.log("hello");
 
   const parseurl$ = load(parseurl);
 
   const posterLinks = parseurl$("div.poster").find("a");
 
-  var linkscrape : string | undefined;
+  var linkscrape: string | undefined;
 
   posterLinks.each((index, element) => {
     if (parseurl$(element).attr("title") == madetitle) {
@@ -81,10 +90,8 @@ const playerlost: (
   const madetitle: string = await make_title(titleid, type);
 
   const linkscrape = await searchfind(madetitle, type);
- 
-  if (linkscrape !== "") {
 
-    
+  if (linkscrape !== "") {
     const sea = s < 10 ? `0${s}` : s.toString();
     const eps = e < 10 ? `0${e}` : e.toString();
     const response = await fetch(linkscrape, {
@@ -102,8 +109,6 @@ const playerlost: (
           ? new URLSearchParams({ play: "" })
           : new URLSearchParams({ [`S${sea}E${eps}`]: "" }), // body data type must match "Content-Type" header
     });
-
-
 
     const uu = await response.text();
 
@@ -133,28 +138,32 @@ const playerlost: (
 
 // // Loop through each anchor and get its title
 
-const streamtape = async (id:string | null | undefined)=>{
+const streamtape = async (id: string | null | undefined, origin: string) => {
   if (id) {
-    const data: string = (
-      await axios.get(`https://streamta.pe/v/${id}`, {
+    const data: string = 
+      await (await fetch(`https://streamta.pe/v/${id}`, {
+        mode:"no-cors",
+        referrer: origin,
         headers: {
-          "Accept-Encoding": "identity",
+          "Origin":origin,         
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+           
         },
-      })
-    ).data;
-  
+      }))
+    .text();
+
     const match = data.match(/robotlink'\).innerHTML = (.*)'/);
     const [fh, sh] = match?.[1]?.split("+ ('") ?? [];
-    const url = `https:${fh?.replace(/'/g, "").trim()}${sh?.substring(3).trim()}`;
-    return url || null
+    const url = `https:${fh?.replace(/'/g, "").trim()}${sh
+      ?.substring(3)
+      .trim()}`;
+
+    return url || null;
   }
-}
+};
 
-
-
-const foundfind = (srcs:string[] | null) => {
+const foundfind = (srcs: string[] | null) => {
   if (srcs) {
     for (var i = 0; i < srcs.length; i++) {
       const parseOurl = urlParser.parse(srcs[i]);
@@ -174,40 +183,54 @@ const foundfind = (srcs:string[] | null) => {
 
 // const id: string | null | undefined = foundfind(await playerlost(106379, "tv", 1, 1));
 
-const app = express()
+const app = express();
 
 app
-.use(cors())
-.get("/",(req,res)=>{res.send("formovie /movie/tmdb forshow /tv/tmdb/season/episode")})
-.get('/tv/:tmdb/:season/:episode',async (req,res)=>{
-  const logreq = await streamtape(foundfind(await playerlost(parseInt(req.params.tmdb), "tv", parseInt(req.params.season) ,  parseInt(req.params.episode))))
-  if(logreq){
-    if (logreq?.length > 0){
-      console.log("why")
-      res.send(logreq)
-    }else{
-      res.status(404)
+  .use(cors())
+  .get("/", (req, res) => {
+    res.send("formovie /movie/tmdb forshow /tv/tmdb/season/episode");
+  })
+  .get("/tv/:tmdb/:season/:episode", async (req, res) => {
+    const logreq = await streamtape(
+      foundfind(
+        await playerlost(
+          parseInt(req.params.tmdb),
+          "tv",
+          parseInt(req.params.season),
+          parseInt(req.params.episode)
+        )
+      ),
+      req.hostname
+    );
+    if (logreq) {
+      if (logreq?.length > 0) {
+        console.log("why");
+        res.send(logreq);
+      } else {
+        res.status(404);
+      }
+    } else {
+      res.status(404).send("not found");
     }
-  }else{
-    res.status(404).send("not found")
-  }
-})
-.get('/movie/:tmdb',async (req,res)=>{
-  const logreq = await streamtape(foundfind(await playerlost(parseInt(req.params.tmdb), "movie", 1 ,  1)))
-  if(logreq){
-    if (logreq?.length > 0){
-      console.log("why")
-      res.send(logreq)
-    }else{
-      res.status(404)
+  })
+  .get("/movie/:tmdb", async (req, res) => {
+    console.log(req.hostname);
+    const logreq = await streamtape(
+      foundfind(await playerlost(parseInt(req.params.tmdb), "movie", 1, 1)),
+      req.hostname
+    );
+    if (logreq) {
+      if (logreq?.length > 0) {
+        console.log("why");
+        res.send(logreq);
+      } else {
+        res.status(404);
+      }
+    } else {
+      res.status(404).send("not found");
     }
-  }else{
-    res.status(404).send("not found")
-  }
-  
-  
-})
-.listen(process.env.PORT || 7000)
+  })
+  .listen(process.env.PORT || 7000);
 
 // const main_ = async ()=>{
 // const dit1 = await streamtape(foundfind(await playerlost(278, "movie", 1, 1)))
